@@ -1,3 +1,4 @@
+#include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
@@ -5,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "appicons.h"
 
 #define MAX_WINDOWS 9
 #define LEMONBAR_HEIGHT 24
@@ -27,18 +29,34 @@ int x_error_handler(Display *d, XErrorEvent *e) {
     return 0;
 }
 
+const char* get_client_icon(Window w){
+    XClassHint ch;
+    const char *icon = get_default_icon();
+
+    if(XGetClassHint(dpy, w, &ch)){
+        if(ch.res_class){
+            icon = get_icon_by_name(ch.res_class);
+        }
+        if(ch.res_class) XFree(ch.res_name);
+        if(ch.res_class) XFree(ch.res_class);
+    }
+    return icon;
+}
+
 void update_bar() {
     printf("%%{l}"); 
     int count = 0;
     for (int i = 0; i < MAX_WINDOWS; i++) {
         if (clients[i].active) {
             count++;
+            const char *icon = get_client_icon(clients[i].win);
+
             if (i == current_client) {
                 // Active window: Highlight
-                printf(" %%{F#ffffff}%%{B#555555} [%d] %%{B-}%%{F-} ", i + 1);
+                printf(" %%{F#ffffff}%%{B#555555} [%s] %%{B-}%%{F-} ", icon);
             } else {
                 // Inactive window
-                printf(" %%{F#aaaaaa} %d %%{F-} ", i + 1);
+                printf(" %%{F#aaaaaa} %s %%{F-} ", icon);
             }
         }
     }
