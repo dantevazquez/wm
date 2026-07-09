@@ -3,6 +3,7 @@
 # Paths
 PREFIX ?= $(HOME)/.local
 BINDIR ?= $(PREFIX)/bin
+SESSIONDIR ?= $(PREFIX)/share/xsessions
 
 # Tools
 CC ?= gcc
@@ -39,8 +40,12 @@ install: $(TARGET)
 	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
 	install -m 755 monowm-start $(DESTDIR)$(BINDIR)/monowm-start
 	install -m 755 monowm-volume $(DESTDIR)$(BINDIR)/monowm-volume
+	install -d $(DESTDIR)$(SESSIONDIR)
+	install -m 644 monowm.desktop $(DESTDIR)$(SESSIONDIR)/monowm.desktop
+	install -d $(HOME)/.config/monowm
+	test -f $(HOME)/.config/monowm/autostart || install -m 755 autostart $(HOME)/.config/monowm/autostart
 	install -d $(HOME)/.config/sxhkd
-	install -m 644 sxhkdrc $(HOME)/.config/sxhkd/sxhkdrc
+	test -f $(HOME)/.config/sxhkd/sxhkdrc || install -m 644 sxhkdrc $(HOME)/.config/sxhkd/sxhkdrc
 	echo '#!/bin/sh' > $(HOME)/.xinitrc
 	echo 'exec $(BINDIR)/monowm-start' >> $(HOME)/.xinitrc
 	chmod +x $(HOME)/.xinitrc
@@ -49,5 +54,6 @@ uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
 	rm -f $(DESTDIR)$(BINDIR)/monowm-start
 	rm -f $(DESTDIR)$(BINDIR)/monowm-volume
+	rm -f $(DESTDIR)$(SESSIONDIR)/monowm.desktop
 
 .PHONY: all clean install uninstall

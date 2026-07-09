@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=monowm
+Comment=Lightweight window manager for X
+Exec=monowm-start
+Type=Application
+DesktopNames=monowm

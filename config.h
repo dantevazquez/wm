@@ -2,12 +2,24 @@
 #define CONFIG_H
 
 #include <X11/X.h>
+#include <X11/keysym.h>
 
 // General Settings
-#define BAR_ENABLED 1
-#define MAX_WINDOWS 9
-#define BAR_HEIGHT 24
-#define MOD_KEY Mod4Mask
+#define BAR_ENABLED 1 // 1 to enable bar, 0 to disable
+#define MAX_WINDOWS 9 //Number of windows that can be open at the same time
+#define BAR_HEIGHT 24 //Height of lemonbar
+#define MOD_KEY Mod4Mask //Super
+
+// Keybindings Configuration
+#define KEY_QUIT XK_q
+
+//For the window switcher. Will only work if WINDOW_SWITCHER_ENABLED = 1
+#define KEY_SWITCHER XK_Tab
+
+// Window Switcher Configuration (Internal Alt-Tab)
+// 1 = Enabled (WM grabs and handles KEY_SWITCHER)
+// 0 = Disabled (allows external tools like sxhkd/alttab to grab KEY_SWITCHER)
+#define WINDOW_SWITCHER_ENABLED 0
 
 // Bar Appearance
 #define BAR_COLOR_ACTIVE_FG "#ffffff"
@@ -27,15 +39,15 @@
 
 // --- Windows Module (app icons) ---
 #define BAR_SHOW_WINDOWS 1
-#define BAR_WINDOWS_POSITION 'c'
+#define BAR_WINDOWS_POSITION 'l'
 
 // --- Time Module ---
-#define BAR_SHOW_TIME 0
+#define BAR_SHOW_TIME 1
 #define BAR_TIME_POSITION 'r'
 #define BAR_TIME_FORMAT "%I:%M %p"  // strftime format (e.g. "03:45 PM")
 
 // --- Battery Module ---
-#define BAR_SHOW_BATTERY 0
+#define BAR_SHOW_BATTERY 1
 #define BAR_BATTERY_POSITION 'r'
 #define BAR_BATTERY_PATH "/sys/class/power_supply/BAT0"
 
@@ -62,18 +74,30 @@
 #define BAR_VOLUME_ICON_LOW "󰕿"
 #define BAR_VOLUME_ICON_MUTE "󰝟"
 
+// Prevent bright white flash when opening windows (I recommend not to change)
+// 0 = Disabled
+// 1 = Solid black background
+// 2 = Undefined background (None) - keeps previous window content visible until client draws
+#define CLIENT_BG_PREVENT_FLASH 2
+
+// Keep inactive windows mapped in the background to prevent black flashes when closing windows
+// I recommend not to change
+#define KEEP_INACTIVE_MAPPED 1
+
 // Icon Configuration
 typedef struct {
     const char *name;
     const char *icon;
 } AppIcon;
 
-static const char __attribute__((unused)) *DEFAULT_ICON_STR = "󰣆";
+static const char __attribute__((unused)) *DEFAULT_ICON_STR = "";
 
+//Add icons for your programs here
 static const AppIcon __attribute__((unused)) APP_ICONS[] = {
     {"firefox", ""},
     {"st", ""},
     {"alacritty", ""},
+    {"kitty", ""},
     {"chromium", ""},
     {NULL, NULL} // Terminator
 };

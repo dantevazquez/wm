@@ -23,6 +23,9 @@ Client clients[MAX_WINDOWS];
 int current_client = -1;
 int screen_width, screen_height;
 Atom net_wm_window_type, net_wm_window_type_dock;
+Atom net_supported, net_supporting_wm_check, net_client_list, net_active_window, net_wm_name;
+Window wm_check_win;
+
 
 // Generic error handler to prevent crashes on BadWindow, etc.
 int x_error_handler(Display *d, XErrorEvent *e) {
@@ -56,6 +59,26 @@ int is_command_in_path(const char *cmd) {
   return found;
 }
 
+void update_client_list() {
+  Window wins[MAX_WINDOWS];
+  int count = 0;
+  for (int i = 0; i < MAX_WINDOWS; i++) {
+    if (clients[i].active) {
+      wins[count++] = clients[i].win;
+    }
+  }
+  XChangeProperty(dpy, root, net_client_list, XA_WINDOW, 32, PropModeReplace,
+                  (unsigned char *)wins, count);
+}
+
+void update_active_window() {
+  Window w = (current_client >= 0 && clients[current_client].active)
+                 ? clients[current_client].win
+                 : None;
+  XChangeProperty(dpy, root, net_active_window, XA_WINDOW, 32, PropModeReplace,
+                  (unsigned char *)&w, 1);
+}
+
 // Window Manager Core
 void setup() {
   signal(SIGUSR1, handle_sigusr1);
@@ -87,6 +110,32 @@ void setup() {
 
   net_wm_window_type = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
   net_wm_window_type_dock = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
+  net_supported = XInternAtom(dpy, "_NET_SUPPORTED", False);
+  net_supporting_wm_check = XInternAtom(dpy, "_NET_SUPPORTING_WM_CHECK", False);
+  net_client_list = XInternAtom(dpy, "_NET_CLIENT_LIST", False);
+  net_active_window = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", False);
+  net_wm_name = XInternAtom(dpy, "_NET_WM_NAME", False);
+
+  Atom supported[] = {
+    net_supported,
+    net_supporting_wm_check,
+    net_client_list,
+    net_active_window,
+    net_wm_window_type,
+    net_wm_window_type_dock
+  };
+  XChangeProperty(dpy, root, net_supported, XA_ATOM, 32, PropModeReplace,
+                  (unsigned char *)supported, sizeof(supported) / sizeof(Atom));
+
+  wm_check_win = XCreateSimpleWindow(dpy, root, 0, 0, 1, 1, 0, 0, 0);
+  XChangeProperty(dpy, wm_check_win, net_supporting_wm_check, XA_WINDOW, 32,
+                  PropModeReplace, (unsigned char *)&wm_check_win, 1);
+  XChangeProperty(dpy, wm_check_win, net_wm_name, XInternAtom(dpy, "UTF8_STRING", False), 8,
+                  PropModeReplace, (unsigned char *)"monowm", 6);
+  XChangeProperty(dpy, root, net_supporting_wm_check, XA_WINDOW, 32,
+                  PropModeReplace, (unsigned char *)&wm_check_win, 1);
+  XChangeProperty(dpy, root, net_wm_name, XInternAtom(dpy, "UTF8_STRING", False), 8,
+                  PropModeReplace, (unsigned char *)"monowm", 6);
 
   // Initialize clients
   for (int i = 0; i < MAX_WINDOWS; i++) {
@@ -95,7 +144,7 @@ void setup() {
   }
 
   // Select events
-  XSelectInput(dpy, root, SubstructureRedirectMask | SubstructureNotifyMask);
+  XSelectInput(dpy, root, SubstructureRedirectMask | SubstructureNotifyMask | StructureNotifyMask);
 
   // Grab keybindings
   keys_grab(dpy, root);
@@ -113,6 +162,7 @@ int add_client(Window w) {
     if (!clients[i].active) {
       clients[i].win = w;
       clients[i].active = 1;
+      update_client_list();
       return i;
     }
   }
@@ -123,7 +173,13 @@ void focus_client(int idx) {
   if (idx < 0 || idx >= MAX_WINDOWS || !clients[idx].active)
     return;
 
+  // Ensure window size is correct for current screen geometry
+  XMoveResizeWindow(dpy, clients[idx].win, 0, lemonbar_height, screen_width,
+                    screen_height - lemonbar_height);
+
+#if !KEEP_INACTIVE_MAPPED
   int old_client = current_client;
+#endif
   current_client = idx;
 
   // Map and raise the new window FIRST to avoid flicker
@@ -132,11 +188,14 @@ void focus_client(int idx) {
   XSetInputFocus(dpy, clients[idx].win, RevertToPointerRoot, CurrentTime);
 
   // Now hide the old window (it's already covered by the new one)
+#if !KEEP_INACTIVE_MAPPED
   if (old_client >= 0 && old_client < MAX_WINDOWS &&
       clients[old_client].active && old_client != idx) {
     XUnmapWindow(dpy, clients[old_client].win);
   }
+#endif
 
+  update_active_window();
   update_bar(clients, MAX_WINDOWS, current_client, dpy);
 }
 
@@ -152,6 +211,8 @@ void remove_client(int idx) {
   clients[MAX_WINDOWS - 1].win = None;
   clients[MAX_WINDOWS - 1].active = 0;
 
+  update_client_list();
+
   // Adjust current_client
   if (current_client == idx) {
     if (clients[idx].active) {
@@ -160,13 +221,26 @@ void remove_client(int idx) {
       focus_client(idx - 1);
     } else {
       current_client = -1;
+      update_active_window();
       update_bar(clients, MAX_WINDOWS, current_client, dpy);
     }
   } else if (current_client > idx) {
     current_client--;
+    update_active_window();
     update_bar(clients, MAX_WINDOWS, current_client, dpy);
   } else {
     update_bar(clients, MAX_WINDOWS, current_client, dpy);
+  }
+}
+
+void handle_client_message(XClientMessageEvent *e) {
+  if (e->message_type == net_active_window) {
+    for (int i = 0; i < MAX_WINDOWS; i++) {
+      if (clients[i].active && clients[i].win == e->window) {
+        focus_client(i);
+        break;
+      }
+    }
   }
 }
 
@@ -183,6 +257,13 @@ void manage_window(Window w) {
 
   // Set border
   XSetWindowBorderWidth(dpy, w, 0);
+
+  // Prevent bright white flash when window is mapped
+#if CLIENT_BG_PREVENT_FLASH == 1
+  XSetWindowBackground(dpy, w, BlackPixel(dpy, DefaultScreen(dpy)));
+#elif CLIENT_BG_PREVENT_FLASH == 2
+  XSetWindowBackgroundPixmap(dpy, w, None);
+#endif
 
   // Map and focus
   focus_client(idx);
@@ -252,6 +333,18 @@ int main() {
     XNextEvent(dpy, &ev);
 
     switch (ev.type) {
+    case ConfigureNotify:
+      if (ev.xconfigure.window == root) {
+        screen_width = ev.xconfigure.width;
+        screen_height = ev.xconfigure.height;
+        for (int i = 0; i < MAX_WINDOWS; i++) {
+          if (clients[i].active) {
+            XMoveResizeWindow(dpy, clients[i].win, 0, lemonbar_height, screen_width,
+                              screen_height - lemonbar_height);
+          }
+        }
+      }
+      break;
     case MapRequest:
       handle_map_request(&ev.xmaprequest);
       break;
@@ -260,6 +353,9 @@ int main() {
       break;
     case KeyPress:
       keys_handle(dpy, &ev.xkey);
+      break;
+    case ClientMessage:
+      handle_client_message(&ev.xclient);
       break;
     }
   }

@@ -13,23 +13,24 @@ extern int screen_width, screen_height;
 // Forward declarations for functions in main.c
 void focus_client(int idx);
 
-// Defined in bar.h, but we pull the struct from there
 #include "bar.h"
 extern Client clients[];
 
 void keys_grab(Display *dpy, Window root) {
-  XGrabKey(dpy, XKeysymToKeycode(dpy, XK_q), MOD, root, True, GrabModeAsync,
+  XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_QUIT), MOD, root, True, GrabModeAsync,
            GrabModeAsync);
-  XGrabKey(dpy, XKeysymToKeycode(dpy, XK_Tab), MOD, root, True, GrabModeAsync,
+#if WINDOW_SWITCHER_ENABLED
+  XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_SWITCHER), MOD, root, True, GrabModeAsync,
            GrabModeAsync);
+#endif
 }
 
 void keys_handle(Display *dpy, XKeyEvent *e) {
   (void)dpy;
   KeySym key = XLookupKeysym(e, 0);
 
-  // Super + Q: Close current window
-  if (key == XK_q) {
+  // Close current window
+  if (key == KEY_QUIT) {
     if (current_client >= 0 && clients[current_client].active) {
       Window win = clients[current_client].win;
       Atom *protocols = NULL;
@@ -63,8 +64,9 @@ void keys_handle(Display *dpy, XKeyEvent *e) {
         XKillClient(dpy, win);
       }
     }
-  } else if (key == XK_Tab) {
-
+  }
+#if WINDOW_SWITCHER_ENABLED
+  else if (key == KEY_SWITCHER) {
     if (current_client < 0)
       return;
 
@@ -78,5 +80,6 @@ void keys_handle(Display *dpy, XKeyEvent *e) {
       focus_client(next_idx);
     }
   }
+#endif
 }
 
