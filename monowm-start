@@ -28,7 +28,7 @@ dbus-update-activation-environment --systemd --all
 dunst &
 
 if command -v lemonbar >/dev/null 2>&1; then
-    exec monowm | lemonbar -p -f "JetBrainsMono Nerd Font:size=12"
+    exec ~/.local/bin/monowm | lemonbar -p -f "JetBrainsMono Nerd Font:size=12"
 else
-    exec monowm
+    exec ~/.local/bin/monowm
 fi

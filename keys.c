@@ -1,6 +1,8 @@
 #include "keys.h"
 #include "config.h"
 #include <X11/keysym.h>
+#include <X11/Xatom.h>
+#include <string.h>
 
 #define MOD MOD_KEY
 
@@ -29,7 +31,37 @@ void keys_handle(Display *dpy, XKeyEvent *e) {
   // Super + Q: Close current window
   if (key == XK_q) {
     if (current_client >= 0 && clients[current_client].active) {
-      XKillClient(dpy, clients[current_client].win);
+      Window win = clients[current_client].win;
+      Atom *protocols = NULL;
+      int n = 0;
+      int supports_delete = 0;
+      Atom proto_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+
+      if (XGetWMProtocols(dpy, win, &protocols, &n)) {
+        for (int i = 0; i < n; i++) {
+          if (protocols[i] == proto_delete) {
+            supports_delete = 1;
+            break;
+          }
+        }
+        if (protocols) {
+          XFree(protocols);
+        }
+      }
+
+      if (supports_delete) {
+        XEvent ev;
+        memset(&ev, 0, sizeof(ev));
+        ev.type = ClientMessage;
+        ev.xclient.window = win;
+        ev.xclient.message_type = XInternAtom(dpy, "WM_PROTOCOLS", False);
+        ev.xclient.format = 32;
+        ev.xclient.data.l[0] = proto_delete;
+        ev.xclient.data.l[1] = CurrentTime;
+        XSendEvent(dpy, win, False, NoEventMask, &ev);
+      } else {
+        XKillClient(dpy, win);
+      }
     }
   } else if (key == XK_Tab) {
 
@@ -47,3 +79,4 @@ void keys_handle(Display *dpy, XKeyEvent *e) {
     }
   }
 }
+
