@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "appicons.h"
 #include "bar.h"
 #include "keys.h"
@@ -9,14 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include "config.h"
 
-#if BAR_ENABLED
-#define LEMONBAR_HEIGHT BAR_HEIGHT
-#else
-#define LEMONBAR_HEIGHT 0
-#endif
+int runtime_bar_enabled = 0;
+int lemonbar_height = 0;
 
 Display *dpy;
 Window root;
@@ -37,9 +36,44 @@ void handle_sigusr1(int sig) {
   bar_trigger_update();
 }
 
+int is_command_in_path(const char *cmd) {
+  char *path = getenv("PATH");
+  if (!path) return 0;
+  char *path_copy = strdup(path);
+  if (!path_copy) return 0;
+  char *dir = strtok(path_copy, ":");
+  int found = 0;
+  while (dir) {
+    char full_path[1024];
+    snprintf(full_path, sizeof(full_path), "%s/%s", dir, cmd);
+    if (access(full_path, X_OK) == 0) {
+      found = 1;
+      break;
+    }
+    dir = strtok(NULL, ":");
+  }
+  free(path_copy);
+  return found;
+}
+
 // Window Manager Core
 void setup() {
   signal(SIGUSR1, handle_sigusr1);
+  signal(SIGPIPE, SIG_IGN);
+
+#if BAR_ENABLED
+  if (is_command_in_path("lemonbar")) {
+    runtime_bar_enabled = 1;
+    lemonbar_height = BAR_HEIGHT;
+  } else {
+    runtime_bar_enabled = 0;
+    lemonbar_height = 0;
+  }
+#else
+  runtime_bar_enabled = 0;
+  lemonbar_height = 0;
+#endif
+
   XSetErrorHandler(x_error_handler);
   dpy = XOpenDisplay(NULL);
   if (!dpy) {
@@ -144,8 +178,8 @@ void manage_window(Window w) {
   }
 
   // Set window geometry (fullscreen minus lemonbar)
-  XMoveResizeWindow(dpy, w, 0, LEMONBAR_HEIGHT, screen_width,
-                    screen_height - LEMONBAR_HEIGHT);
+  XMoveResizeWindow(dpy, w, 0, lemonbar_height, screen_width,
+                    screen_height - lemonbar_height);
 
   // Set border
   XSetWindowBorderWidth(dpy, w, 0);

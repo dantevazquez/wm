@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Display Settings
+DISPLAY_OUTPUT="eDP-1"
+RESOLUTION="1920x1200"
+
+# Define the idle timeout in seconds (300 seconds = 5 minutes)
+IDLE_TIME=300
+
+xset s on
+xset s $IDLE_TIME
+xset +dpms
+xset dpms $IDLE_TIME $IDLE_TIME $IDLE_TIME
+xrandr --output $DISPLAY_OUTPUT --mode $RESOLUTION
+
+# 1. Initialize the keyring variables if they weren't fully inherited from the TTY
+eval $(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)
+export SSH_AUTH_SOCK
+export SECRET_SERVICE_SOCK
+
+/run/current-system/sw/libexec/polkit-gnome-authentication-agent-1 &
+sxhkd &
+
+# 2. FIX HERE: Update DBus and systemd with ALL environment variables (including the keyring ones)
+dbus-update-activation-environment --systemd --all
+
+# Start notification daemon
+dunst &
+
+if command -v lemonbar >/dev/null 2>&1; then
+    exec monowm | lemonbar -p -f "JetBrainsMono Nerd Font:size=12"
+else
+    exec monowm
+fi

@@ -23,4 +23,6 @@ void bar_start_refresh_thread(Client *clients, int max_windows,
 // Trigger an immediate update of the bar (async-signal-safe)
 void bar_trigger_update(void);
 
+extern int runtime_bar_enabled;
+
 #endif

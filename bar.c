@@ -284,11 +284,17 @@ static void compose_bar(Client *clients, int max_windows, int current_client,
   pthread_mutex_unlock(&bar_mutex);
 }
 
-// Called from the main thread when windows change
 void update_bar(Client *clients, int max_windows, int current_client,
                 Display *dpy) {
 #if BAR_ENABLED
-  compose_bar(clients, max_windows, current_client, dpy, 1);
+  if (runtime_bar_enabled) {
+    compose_bar(clients, max_windows, current_client, dpy, 1);
+  } else {
+    (void)clients;
+    (void)max_windows;
+    (void)current_client;
+    (void)dpy;
+  }
 #else
   (void)clients;
   (void)max_windows;
@@ -305,8 +311,16 @@ static void *bar_refresh_thread(void *arg) {
   pfd.fd = bar_update_pipe[0];
   pfd.events = POLLIN;
 
+#if (defined(BAR_SHOW_TIME) && BAR_SHOW_TIME) || \
+    (defined(BAR_SHOW_BATTERY) && BAR_SHOW_BATTERY) || \
+    (defined(BAR_SHOW_VOLUME) && BAR_SHOW_VOLUME)
+  const int timeout_ms = BAR_UPDATE_INTERVAL * 1000;
+#else
+  const int timeout_ms = -1;
+#endif
+
   while (1) {
-    int ret = poll(&pfd, 1, BAR_UPDATE_INTERVAL * 1000);
+    int ret = poll(&pfd, 1, timeout_ms);
     if (ret > 0) {
       char dummy;
       // Drain the non-blocking pipe
@@ -322,6 +336,9 @@ static void *bar_refresh_thread(void *arg) {
 void bar_start_refresh_thread(Client *clients, int max_windows,
                               int *current_client_ptr, Display *dpy) {
 #if BAR_ENABLED
+  if (!runtime_bar_enabled) {
+    return;
+  }
   bar_clients = clients;
   bar_max_windows = max_windows;
   bar_current_client_ptr = current_client_ptr;
@@ -348,7 +365,7 @@ void bar_start_refresh_thread(Client *clients, int max_windows,
 
 void bar_trigger_update(void) {
 #if BAR_ENABLED
-  if (bar_update_pipe[1] != -1) {
+  if (runtime_bar_enabled && bar_update_pipe[1] != -1) {
     char dummy = 1;
     ssize_t n = write(bar_update_pipe[1], &dummy, 1);
     (void)n;

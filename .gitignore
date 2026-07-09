@@ -1,1 +1,4 @@
-wm
+monowm
+*.o
+result
+result-*
