@@ -5,9 +5,11 @@
 #include <X11/keysym.h>
 
 // General Settings
-#define BAR_ENABLED 0 // 1 to enable bar, 0 to disable
+#define BAR_ENABLED 1 // 1 to enable bar, 0 to disable
 #define MAX_WINDOWS 9 //Number of windows that can be open at the same time
-#define BAR_HEIGHT 60 //Height of lemonbar
+#define BAR_HEIGHT 24 //Height of lemonbar
+#define BAR_FONT_NAME "JetBrainsMono Nerd Font"
+#define BAR_FONT_SIZE 6
 #define MOD_KEY Mod4Mask //Super
 
 // Keybindings Configuration

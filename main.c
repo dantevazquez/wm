@@ -79,23 +79,33 @@ void update_active_window() {
                   (unsigned char *)&w, 1);
 }
 
+double get_dpi(Display *d) {
+  int screen = DefaultScreen(d);
+  double height_mm = DisplayHeightMM(d, screen);
+  if (height_mm > 0) {
+    return (DisplayHeight(d, screen) * 25.4) / height_mm;
+  }
+  return 96.0;
+}
+
+int get_scaled_bar_height(Display *d) {
+  double dpi = get_dpi(d);
+  int height = (int)(BAR_HEIGHT * (dpi / 96.0) + 0.5);
+  if (height < 10) height = 10;
+  return height;
+}
+
+int get_scaled_font_size(Display *d) {
+  double dpi = get_dpi(d);
+  int font_size = (int)(BAR_FONT_SIZE * (dpi / 96.0) + 0.5);
+  if (font_size < 4) font_size = 4;
+  return font_size;
+}
+
 // Window Manager Core
 void setup() {
   signal(SIGUSR1, handle_sigusr1);
   signal(SIGPIPE, SIG_IGN);
-
-#if BAR_ENABLED
-  if (is_command_in_path("lemonbar")) {
-    runtime_bar_enabled = 1;
-    lemonbar_height = BAR_HEIGHT;
-  } else {
-    runtime_bar_enabled = 0;
-    lemonbar_height = 0;
-  }
-#else
-  runtime_bar_enabled = 0;
-  lemonbar_height = 0;
-#endif
 
   XSetErrorHandler(x_error_handler);
   dpy = XOpenDisplay(NULL);
@@ -107,6 +117,19 @@ void setup() {
   root = DefaultRootWindow(dpy);
   screen_width = DisplayWidth(dpy, DefaultScreen(dpy));
   screen_height = DisplayHeight(dpy, DefaultScreen(dpy));
+
+#if BAR_ENABLED
+  if (is_command_in_path("lemonbar")) {
+    runtime_bar_enabled = 1;
+    lemonbar_height = get_scaled_bar_height(dpy);
+  } else {
+    runtime_bar_enabled = 0;
+    lemonbar_height = 0;
+  }
+#else
+  runtime_bar_enabled = 0;
+  lemonbar_height = 0;
+#endif
 
   net_wm_window_type = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
   net_wm_window_type_dock = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
@@ -348,6 +371,28 @@ int main(int argc, char *argv[]) {
 #else
     return 1;
 #endif
+  }
+
+  if (argc > 1 && strcmp(argv[1], "--get-bar-height") == 0) {
+    Display *d = XOpenDisplay(NULL);
+    if (!d) {
+      printf("%d\n", BAR_HEIGHT);
+      return 0;
+    }
+    printf("%d\n", get_scaled_bar_height(d));
+    XCloseDisplay(d);
+    return 0;
+  }
+
+  if (argc > 1 && strcmp(argv[1], "--get-bar-font") == 0) {
+    Display *d = XOpenDisplay(NULL);
+    if (!d) {
+      printf("%s:size=%d\n", BAR_FONT_NAME, BAR_FONT_SIZE);
+      return 0;
+    }
+    printf("%s:size=%d\n", BAR_FONT_NAME, get_scaled_font_size(d));
+    XCloseDisplay(d);
+    return 0;
   }
 
   setup();

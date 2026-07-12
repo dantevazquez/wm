@@ -10,7 +10,6 @@
 # Set these to your preferred monitor output and resolution
 # DISPLAY_OUTPUT="eDP-1"
 # RESOLUTION="1920x1200"
-
 # Screen Locker and Power Management
 # Define the idle timeout in seconds (300 seconds = 5 minutes)
 # IDLE_TIME=300
@@ -47,7 +46,7 @@
 
 # Start background programs
 sxhkd & # Hotkey Daemon
-# alttab -w 1 -mk Super_L & # Recommended Tab Switcher
+# alttab -w 1 -mk Super_L -t 224x256 -i 64x64 -font "xft:sans-20" & # Recommended Tab Switcher
 # dbus-update-activation-environment --systemd --all
 # dunst & # Notification Daemon
 
