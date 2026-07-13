@@ -15,6 +15,9 @@
 // Keybindings Configuration
 #define KEY_QUIT XK_q
 
+// Modifier for switching to specific windows (1-9)
+#define KEY_SWITCH_MOD (MOD_KEY | ShiftMask)
+
 //For the window switcher. Will only work if WINDOW_SWITCHER_ENABLED = 1
 #define KEY_SWITCHER XK_Tab
 

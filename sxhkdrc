@@ -26,7 +26,7 @@ XF86AudioMicMute
 
 # Brightness Control
 XF86MonBrightnessUp
-    brightnessctl set +5%
+    ~/.local/bin/monowm-brightness up
 
 XF86MonBrightnessDown
-    brightnessctl set 5%-
+    ~/.local/bin/monowm-brightness down

@@ -23,6 +23,12 @@ void keys_grab(Display *dpy, Window root) {
   XGrabKey(dpy, XKeysymToKeycode(dpy, KEY_SWITCHER), MOD, root, True, GrabModeAsync,
            GrabModeAsync);
 #endif
+
+  // Grab number keys for switching windows
+  for (int i = 0; i < 9; i++) {
+    XGrabKey(dpy, XKeysymToKeycode(dpy, XK_1 + i), KEY_SWITCH_MOD, root, True, GrabModeAsync,
+             GrabModeAsync);
+  }
 }
 
 void keys_handle(Display *dpy, XKeyEvent *e) {
@@ -81,5 +87,9 @@ void keys_handle(Display *dpy, XKeyEvent *e) {
     }
   }
 #endif
+  else if (key >= XK_1 && key <= XK_9) {
+    int idx = key - XK_1;
+    focus_client(idx);
+  }
 }
 

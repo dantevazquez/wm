@@ -1,0 +1,17 @@
+#!/bin/sh
+
+case "$1" in
+    up)
+        brightnessctl set +5%
+        ;;
+    down)
+        brightnessctl set 5%-
+        ;;
+esac
+
+BRIGHTNESS=$(brightnessctl -m | cut -d, -f4 | tr -d '%')
+
+notify-send -h string:x-canonical-private-synchronous:brightness \
+            -h int:value:"$BRIGHTNESS" \
+            -i notification-display-brightness \
+            "Brightness: ${BRIGHTNESS}%"

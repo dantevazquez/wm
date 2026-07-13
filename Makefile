@@ -40,6 +40,7 @@ install: $(TARGET)
 	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
 	install -m 755 monowm-start $(DESTDIR)$(BINDIR)/monowm-start
 	install -m 755 monowm-volume $(DESTDIR)$(BINDIR)/monowm-volume
+	install -m 755 monowm-brightness $(DESTDIR)$(BINDIR)/monowm-brightness
 	install -d $(DESTDIR)$(SESSIONDIR)
 	install -m 644 monowm.desktop $(DESTDIR)$(SESSIONDIR)/monowm.desktop
 	install -d $(HOME)/.config/monowm
@@ -54,6 +55,7 @@ uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
 	rm -f $(DESTDIR)$(BINDIR)/monowm-start
 	rm -f $(DESTDIR)$(BINDIR)/monowm-volume
+	rm -f $(DESTDIR)$(BINDIR)/monowm-brightness
 	rm -f $(DESTDIR)$(SESSIONDIR)/monowm.desktop
 
 .PHONY: all clean install uninstall

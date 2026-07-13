@@ -82,10 +82,10 @@ XF86AudioMicMute
 
 # Brightness Control
 XF86MonBrightnessUp
-    brightnessctl set +5%
+    ~/.local/bin/monowm-brightness up
 
 XF86MonBrightnessDown
-    brightnessctl set 5%-
+    ~/.local/bin/monowm-brightness down
 ```
 
 To add startup programs and change resolution, add them in ~/.config/monowm/autostart
