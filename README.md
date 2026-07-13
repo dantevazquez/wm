@@ -2,6 +2,9 @@
 
 Lightweight window manger for x that uses under 3mb of ram. This window manager follows the mobile workflow where one app/window always occupies the entire screen.
 
+<video src="demo.mp4" width="100%" controls></video>
+
+
 ## How to install
 
 ### Inside tty, do the following
