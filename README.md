@@ -18,7 +18,7 @@ Optional dependencies:
 * `pipewire` (for volume)
 * `brightnessctl` (to control screen brightness)
 * `dunst` (to see volume changes and low battery notifications)
-* `lemonbarxft` (Built in bar)
+* `lemonbarxft` (Built in bar. If your package manager does not have it, you can build the single c file from [here](https://github.com/drscream/lemonbar-xft))
 * A nerdfont of your choice (for the bar)
 
 ## Configuration
