@@ -101,5 +101,5 @@ These are recommended for the default configuration:
 
 ## Configuration
 * Core configurations (bindings, custom hotkeys, auto-run commands) can be configured in `~/.config/monowm/config.conf` (see template: [config.conf](templates/config.conf)).
-* Additional startup configuration can be customized in `~/.config/monowm/autostart` (see default: [autostart](autostart)).
+* Additional startup configuration and display setttings can be customized in `~/.config/monowm/autostart` (see default: [autostart](autostart)).
 * Bar configuration can be configured in `~/.config/monowm/bar.conf` (see template: [bar.conf](templates/bar.conf)).
