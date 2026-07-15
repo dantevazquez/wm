@@ -47,6 +47,7 @@ install: $(TARGET)
 	test -f $(HOME)/.config/monowm/autostart || install -m 755 autostart $(HOME)/.config/monowm/autostart
 	test -f $(HOME)/.config/monowm/config.conf || install -m 644 templates/config.conf $(HOME)/.config/monowm/config.conf
 	test -f $(HOME)/.config/monowm/bar.conf || install -m 644 templates/bar.conf $(HOME)/.config/monowm/bar.conf
+	test -f $(HOME)/.config/monowm/bg.png || install -m 644 bg.png $(HOME)/.config/monowm/bg.png
 	echo '#!/bin/sh' > $(HOME)/.xinitrc
 	echo 'exec $(BINDIR)/monowm-start' >> $(HOME)/.xinitrc
 	chmod +x $(HOME)/.xinitrc
