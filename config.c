@@ -146,6 +146,18 @@ static void load_config_file(const char *path) {
         char *key = trim(ptr);
         char *val = trim(eq + 1);
 
+        // Strip inline comments unless it's a color setting
+        if (strcmp(key, "bar_color_active_fg") != 0 &&
+            strcmp(key, "bar_color_active_bg") != 0 &&
+            strcmp(key, "bar_color_inactive_fg") != 0 &&
+            strcmp(key, "bar_color_inactive_bg") != 0) {
+            char *comment = strchr(val, '#');
+            if (comment) {
+                *comment = '\0';
+                val = trim(val);
+            }
+        }
+
         // General settings
         if (strcmp(key, "max_windows") == 0) {
             config.max_windows = atoi(val);
