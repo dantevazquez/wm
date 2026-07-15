@@ -45,7 +45,7 @@
 # done
 
 # Start background programs
-sxhkd & # Hotkey Daemon
+# sxhkd & # Hotkey Daemon (No longer needed; monowm handles keybinds natively now)
 # alttab -w 1 -mk Super_L -t 224x256 -i 64x64 -font "xft:sans-20" & # Recommended Tab Switcher
 # dbus-update-activation-environment --systemd --all
 # dunst & # Notification Daemon

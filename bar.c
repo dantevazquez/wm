@@ -12,12 +12,10 @@
 #include <poll.h>
 #include <fcntl.h>
 
-// Mutex for thread-safe bar updates
 static pthread_mutex_t bar_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int bar_update_pipe[2] = {-1, -1};
 
-// Cached bar state passed in from main
 static Client *bar_clients;
 static int bar_max_windows;
 static int *bar_current_client_ptr;
@@ -39,7 +37,6 @@ const char *get_client_icon(Display *dpy, Window w) {
   return icon;
 }
 
-// Bar Module Renderers
 static char cached_windows[1024] = {0};
 
 static int render_windows(Client *clients, int max_windows, int current_client,
@@ -55,10 +52,10 @@ static int render_windows(Client *clients, int max_windows, int current_client,
       if (i == current_client) {
         offset += snprintf(buf + offset, size - offset,
                            " %%{F%s}%%{B%s} %s %%{B-}%%{F-} ",
-                           BAR_COLOR_ACTIVE_FG, BAR_COLOR_ACTIVE_BG, icon);
+                           config.bar_color_active_fg, config.bar_color_active_bg, icon);
       } else {
         offset += snprintf(buf + offset, size - offset, " %%{F%s} %s %%{F-} ",
-                           BAR_COLOR_INACTIVE_FG, icon);
+                           config.bar_color_inactive_fg, icon);
       }
     }
   }
@@ -68,20 +65,15 @@ static int render_windows(Client *clients, int max_windows, int current_client,
   return offset;
 }
 
-#if BAR_SHOW_TIME
-// Render time into buf, return bytes written
 static int render_time(char *buf, int size) {
   time_t now = time(NULL);
   struct tm *tm_info = localtime(&now);
   char time_str[64];
 
-  strftime(time_str, sizeof(time_str), BAR_TIME_FORMAT, tm_info);
+  strftime(time_str, sizeof(time_str), config.bar_time_format, tm_info);
   return snprintf(buf, size, " %s ", time_str);
 }
-#endif
 
-#if BAR_SHOW_VOLUME
-// Read an integer from a shell command, return -1 on failure
 static int read_cmd_int(const char *cmd) {
   FILE *f = popen(cmd, "r");
   if (!f)
@@ -94,9 +86,8 @@ static int read_cmd_int(const char *cmd) {
   return val;
 }
 
-// Check if audio is muted
 static int is_volume_muted(void) {
-  FILE *f = popen(BAR_VOLUME_MUTE_CMD, "r");
+  FILE *f = popen(config.bar_volume_mute_cmd, "r");
   if (!f)
     return 0;
 
@@ -110,22 +101,20 @@ static int is_volume_muted(void) {
   return (strcmp(buf, "yes") == 0);
 }
 
-// Get the appropriate volume icon
 static const char *get_volume_icon(int percent, int muted) {
   if (muted)
-    return BAR_VOLUME_ICON_MUTE;
+    return config.bar_volume_icon_mute;
   if (percent >= 66)
-    return BAR_VOLUME_ICON_HIGH;
+    return config.bar_volume_icon_high;
   if (percent >= 33)
-    return BAR_VOLUME_ICON_MED;
-  return BAR_VOLUME_ICON_LOW;
+    return config.bar_volume_icon_med;
+  return config.bar_volume_icon_low;
 }
 
-// Render volume into buf, return bytes written
 static int render_volume(char *buf, int size) {
-  int percent = read_cmd_int(BAR_VOLUME_CMD);
+  int percent = read_cmd_int(config.bar_volume_cmd);
   if (percent < 0)
-    return snprintf(buf, size, " %s N/A ", BAR_VOLUME_ICON_MUTE);
+    return snprintf(buf, size, " %s N/A ", config.bar_volume_icon_mute);
 
   int muted = is_volume_muted();
   const char *icon = get_volume_icon(percent, muted);
@@ -135,13 +124,10 @@ static int render_volume(char *buf, int size) {
   }
   return snprintf(buf, size, " %s %d%% ", icon, percent);
 }
-#endif
 
-#if BAR_SHOW_BATTERY
-// Read battery percentage from sysfs, return -1 on failure
 static int read_battery_percent(void) {
   char path[256];
-  snprintf(path, sizeof(path), "%s/capacity", BAR_BATTERY_PATH);
+  snprintf(path, sizeof(path), "%s/capacity", config.bar_battery_path);
 
   FILE *f = fopen(path, "r");
   if (!f)
@@ -154,10 +140,9 @@ static int read_battery_percent(void) {
   return percent;
 }
 
-// Check if battery is charging
 static int is_battery_charging(void) {
   char path[256];
-  snprintf(path, sizeof(path), "%s/status", BAR_BATTERY_PATH);
+  snprintf(path, sizeof(path), "%s/status", config.bar_battery_path);
 
   FILE *f = fopen(path, "r");
   if (!f)
@@ -170,27 +155,24 @@ static int is_battery_charging(void) {
   }
   fclose(f);
 
-  // Remove trailing newline
   status[strcspn(status, "\n")] = '\0';
   return (strcmp(status, "Charging") == 0 || strcmp(status, "Full") == 0);
 }
 
-// Get the appropriate battery icon based on level
 static const char *get_battery_icon(int percent, int charging) {
   if (charging)
-    return BAR_BATTERY_ICON_CHARGING;
+    return config.bar_battery_icon_charging;
   if (percent >= 75)
-    return BAR_BATTERY_ICON_FULL;
+    return config.bar_battery_icon_full;
   if (percent >= 50)
-    return BAR_BATTERY_ICON_75;
+    return config.bar_battery_icon_75;
   if (percent >= 25)
-    return BAR_BATTERY_ICON_50;
+    return config.bar_battery_icon_50;
   if (percent >= 10)
-    return BAR_BATTERY_ICON_25;
-  return BAR_BATTERY_ICON_EMPTY;
+    return config.bar_battery_icon_25;
+  return config.bar_battery_icon_empty;
 }
 
-// Render battery into buf, return bytes written
 static int render_battery(char *buf, int size) {
   int percent = read_battery_percent();
   if (percent < 0)
@@ -199,7 +181,6 @@ static int render_battery(char *buf, int size) {
   int charging = is_battery_charging();
   const char *icon = get_battery_icon(percent, charging);
 
-  // Color: red if <=10%, yellow if <=25%, default otherwise
   if (percent <= 10) {
     return snprintf(buf, size, " %%{F#ff5555}%s %d%%%%%%{F-} ", icon, percent);
   } else if (percent <= 25) {
@@ -207,9 +188,7 @@ static int render_battery(char *buf, int size) {
   }
   return snprintf(buf, size, " %s %d%% ", icon, percent);
 }
-#endif
 
-// Bar Output Composer
 static void compose_bar(Client *clients, int max_windows, int current_client,
                         Display *dpy, int refresh_windows) {
   pthread_mutex_lock(&bar_mutex);
@@ -225,59 +204,54 @@ static void compose_bar(Client *clients, int max_windows, int current_client,
 
   int l_off = 0, c_off = 0, r_off = 0;
 
-//Windows module (always from cache)
-#if BAR_SHOW_WINDOWS
-#if BAR_WINDOWS_POSITION == 'l'
-  l_off +=
-      snprintf(left + l_off, (int)sizeof(left) - l_off, "%s", cached_windows);
-#elif BAR_WINDOWS_POSITION == 'c'
-  c_off += snprintf(center + c_off, (int)sizeof(center) - c_off, "%s",
-                    cached_windows);
-#elif BAR_WINDOWS_POSITION == 'r'
-  r_off +=
-      snprintf(right + r_off, (int)sizeof(right) - r_off, "%s", cached_windows);
-#endif
-#endif
+  // Windows module
+  if (config.bar_show_windows) {
+    if (config.bar_windows_position == 'l') {
+      l_off += snprintf(left + l_off, (int)sizeof(left) - l_off, "%s", cached_windows);
+    } else if (config.bar_windows_position == 'c') {
+      c_off += snprintf(center + c_off, (int)sizeof(center) - c_off, "%s", cached_windows);
+    } else if (config.bar_windows_position == 'r') {
+      r_off += snprintf(right + r_off, (int)sizeof(right) - r_off, "%s", cached_windows);
+    }
+  }
 
-//Time module
-#if BAR_SHOW_TIME
-#if BAR_TIME_POSITION == 'l'
-  l_off += render_time(left + l_off, (int)sizeof(left) - l_off);
-#elif BAR_TIME_POSITION == 'c'
-  c_off += render_time(center + c_off, (int)sizeof(center) - c_off);
-#elif BAR_TIME_POSITION == 'r'
-  r_off += render_time(right + r_off, (int)sizeof(right) - r_off);
-#endif
-#endif
+  // Time module
+  if (config.bar_show_time) {
+    if (config.bar_time_position == 'l') {
+      l_off += render_time(left + l_off, (int)sizeof(left) - l_off);
+    } else if (config.bar_time_position == 'c') {
+      c_off += render_time(center + c_off, (int)sizeof(center) - c_off);
+    } else if (config.bar_time_position == 'r') {
+      r_off += render_time(right + r_off, (int)sizeof(right) - r_off);
+    }
+  }
 
-//Volume module
-#if BAR_SHOW_VOLUME
-#if BAR_VOLUME_POSITION == 'l'
-  l_off += render_volume(left + l_off, (int)sizeof(left) - l_off);
-#elif BAR_VOLUME_POSITION == 'c'
-  c_off += render_volume(center + c_off, (int)sizeof(center) - c_off);
-#elif BAR_VOLUME_POSITION == 'r'
-  r_off += render_volume(right + r_off, (int)sizeof(right) - r_off);
-#endif
-#endif
+  // Volume module
+  if (config.bar_show_volume) {
+    if (config.bar_volume_position == 'l') {
+      l_off += render_volume(left + l_off, (int)sizeof(left) - l_off);
+    } else if (config.bar_volume_position == 'c') {
+      c_off += render_volume(center + c_off, (int)sizeof(center) - c_off);
+    } else if (config.bar_volume_position == 'r') {
+      r_off += render_volume(right + r_off, (int)sizeof(right) - r_off);
+    }
+  }
 
-//Battery module
-#if BAR_SHOW_BATTERY
-#if BAR_BATTERY_POSITION == 'l'
-  l_off += render_battery(left + l_off, (int)sizeof(left) - l_off);
-#elif BAR_BATTERY_POSITION == 'c'
-  c_off += render_battery(center + c_off, (int)sizeof(center) - c_off);
-#elif BAR_BATTERY_POSITION == 'r'
-  r_off += render_battery(right + r_off, (int)sizeof(right) - r_off);
-#endif
-#endif
+  // Battery module
+  if (config.bar_show_battery) {
+    if (config.bar_battery_position == 'l') {
+      l_off += render_battery(left + l_off, (int)sizeof(left) - l_off);
+    } else if (config.bar_battery_position == 'c') {
+      c_off += render_battery(center + c_off, (int)sizeof(center) - c_off);
+    } else if (config.bar_battery_position == 'r') {
+      r_off += render_battery(right + r_off, (int)sizeof(right) - r_off);
+    }
+  }
 
-  // Suppress unused variable warnings when modules are disabled
   (void)l_off;
   (void)c_off;
   (void)r_off;
 
-  // Compose final lemonbar output: %{l}...%{c}...%{r}...
   printf("%%{l}%s%%{c}%s%%{r}%s\n", left, center, right);
   fflush(stdout);
 
@@ -286,7 +260,6 @@ static void compose_bar(Client *clients, int max_windows, int current_client,
 
 void update_bar(Client *clients, int max_windows, int current_client,
                 Display *dpy) {
-#if BAR_ENABLED
   if (runtime_bar_enabled) {
     compose_bar(clients, max_windows, current_client, dpy, 1);
   } else {
@@ -295,47 +268,28 @@ void update_bar(Client *clients, int max_windows, int current_client,
     (void)current_client;
     (void)dpy;
   }
-#else
-  (void)clients;
-  (void)max_windows;
-  (void)current_client;
-  (void)dpy;
-#endif
 }
 
-#if BAR_ENABLED
-// Periodic Bar Refresh Thread
 static void *bar_refresh_thread(void *arg) {
   (void)arg;
   struct pollfd pfd;
   pfd.fd = bar_update_pipe[0];
   pfd.events = POLLIN;
 
-#if (defined(BAR_SHOW_TIME) && BAR_SHOW_TIME) || \
-    (defined(BAR_SHOW_BATTERY) && BAR_SHOW_BATTERY) || \
-    (defined(BAR_SHOW_VOLUME) && BAR_SHOW_VOLUME)
-  const int timeout_ms = BAR_UPDATE_INTERVAL * 1000;
-#else
-  const int timeout_ms = -1;
-#endif
-
   while (1) {
+    int timeout_ms = config.bar_update_interval * 1000;
     int ret = poll(&pfd, 1, timeout_ms);
     if (ret > 0) {
       char dummy;
-      // Drain the non-blocking pipe
       while (read(bar_update_pipe[0], &dummy, 1) > 0);
     }
-    compose_bar(bar_clients, bar_max_windows, *bar_current_client_ptr, bar_dpy,
-                0);
+    compose_bar(bar_clients, bar_max_windows, *bar_current_client_ptr, bar_dpy, 0);
   }
   return NULL;
 }
-#endif
 
 void bar_start_refresh_thread(Client *clients, int max_windows,
                               int *current_client_ptr, Display *dpy) {
-#if BAR_ENABLED
   if (!runtime_bar_enabled) {
     return;
   }
@@ -345,7 +299,6 @@ void bar_start_refresh_thread(Client *clients, int max_windows,
   bar_dpy = dpy;
 
   if (pipe(bar_update_pipe) == 0) {
-    // Make read end non-blocking so we can safely drain it in a loop
     int flags = fcntl(bar_update_pipe[0], F_GETFL, 0);
     if (flags != -1) {
       fcntl(bar_update_pipe[0], F_SETFL, flags | O_NONBLOCK);
@@ -355,20 +308,12 @@ void bar_start_refresh_thread(Client *clients, int max_windows,
   pthread_t refresh_tid;
   pthread_create(&refresh_tid, NULL, bar_refresh_thread, NULL);
   pthread_detach(refresh_tid);
-#else
-  (void)clients;
-  (void)max_windows;
-  (void)current_client_ptr;
-  (void)dpy;
-#endif
 }
 
 void bar_trigger_update(void) {
-#if BAR_ENABLED
   if (runtime_bar_enabled && bar_update_pipe[1] != -1) {
     char dummy = 1;
     ssize_t n = write(bar_update_pipe[1], &dummy, 1);
     (void)n;
   }
-#endif
 }
