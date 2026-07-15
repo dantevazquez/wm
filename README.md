@@ -120,3 +120,5 @@ dbus-update-activation-environment --systemd --all
 dunst &
 # add more startup commands here
 ```
+
+Todo: Create a unified config file to configure everything. At the moment, configurations are done in autostart, sxhkdrc, and config.h.
