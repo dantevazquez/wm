@@ -46,7 +46,11 @@ void spawn_lemonbar(Display *d) {
     char font_str[256];
     snprintf(font_str, sizeof(font_str), "%s:size=%d", config.bar_font_name, config.bar_font_size);
 
-    execlp("lemonbar", "lemonbar", "-p", "-g", geom_str, "-f", font_str, NULL);
+    if (config.bar_position == 'b') {
+      execlp("lemonbar", "lemonbar", "-p", "-b", "-g", geom_str, "-f", font_str, NULL);
+    } else {
+      execlp("lemonbar", "lemonbar", "-p", "-g", geom_str, "-f", font_str, NULL);
+    }
     _exit(1);
   } else if (lemonbar_pid > 0) {
     close(pipefd[0]);
@@ -176,7 +180,7 @@ static int render_volume(char *buf, int size) {
 }
 
 static int read_battery_percent(void) {
-  char path[256];
+  char path[sizeof(config.bar_battery_path) + 16];
   snprintf(path, sizeof(path), "%s/capacity", config.bar_battery_path);
 
   FILE *f = fopen(path, "r");
@@ -191,7 +195,7 @@ static int read_battery_percent(void) {
 }
 
 static int is_battery_charging(void) {
-  char path[256];
+  char path[sizeof(config.bar_battery_path) + 16];
   snprintf(path, sizeof(path), "%s/status", config.bar_battery_path);
 
   FILE *f = fopen(path, "r");

@@ -93,6 +93,7 @@ static void config_set_defaults(void) {
     strcpy(config.bar_font_name, "JetBrainsMono Nerd Font");
     config.bar_font_size = 6;
     config.bar_update_interval = 5;
+    config.bar_position = 't';
 
     strcpy(config.bar_color_active_fg, "#ffffff");
     strcpy(config.bar_color_active_bg, "#555555");
@@ -200,6 +201,12 @@ static void load_config_file(const char *path) {
             config.bar_font_size = atoi(val);
         } else if (strcmp(key, "bar_update_interval") == 0) {
             config.bar_update_interval = atoi(val);
+        } else if (strcmp(key, "bar_position") == 0) {
+            if (strcasecmp(val, "bottom") == 0) {
+                config.bar_position = 'b';
+            } else {
+                config.bar_position = 't';
+            }
         }
         // Bar Colors
         else if (strcmp(key, "bar_color_active_fg") == 0) {

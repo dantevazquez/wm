@@ -50,6 +50,7 @@ typedef struct {
     char bar_font_name[128];
     int bar_font_size;
     int bar_update_interval;
+    char bar_position;
 
     // Bar Appearance
     char bar_color_active_fg[32];

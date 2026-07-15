@@ -101,6 +101,13 @@ int get_scaled_font_size(Display *d) {
   return font_size;
 }
 
+int get_client_y() {
+  if (runtime_bar_enabled && config.bar_position == 'b') {
+    return 0;
+  }
+  return lemonbar_height;
+}
+
 void spawn(const char *cmd) {
   pid_t pid = fork();
   if (pid == 0) {
@@ -138,7 +145,7 @@ void reload_config() {
 
   for (int i = 0; i < config.max_windows; i++) {
     if (clients[i].active) {
-      XMoveResizeWindow(dpy, clients[i].win, 0, lemonbar_height, screen_width,
+      XMoveResizeWindow(dpy, clients[i].win, 0, get_client_y(), screen_width,
                         screen_height - lemonbar_height);
     }
   }
@@ -162,7 +169,7 @@ void toggle_bar() {
 
   for (int i = 0; i < config.max_windows; i++) {
     if (clients[i].active) {
-      XMoveResizeWindow(dpy, clients[i].win, 0, lemonbar_height, screen_width,
+      XMoveResizeWindow(dpy, clients[i].win, 0, get_client_y(), screen_width,
                         screen_height - lemonbar_height);
     }
   }
@@ -269,7 +276,7 @@ void focus_client(int idx) {
   if (idx < 0 || idx >= config.max_windows || !clients[idx].active)
     return;
 
-  XMoveResizeWindow(dpy, clients[idx].win, 0, lemonbar_height, screen_width,
+  XMoveResizeWindow(dpy, clients[idx].win, 0, get_client_y(), screen_width,
                     screen_height - lemonbar_height);
 
 #if !KEEP_INACTIVE_MAPPED
@@ -342,7 +349,7 @@ void manage_window(Window w) {
     return;
   }
 
-  XMoveResizeWindow(dpy, w, 0, lemonbar_height, screen_width,
+  XMoveResizeWindow(dpy, w, 0, get_client_y(), screen_width,
                     screen_height - lemonbar_height);
 
   XSetWindowBorderWidth(dpy, w, 0);
@@ -465,7 +472,7 @@ int main(int argc, char *argv[]) {
         screen_height = ev.xconfigure.height;
         for (int i = 0; i < config.max_windows; i++) {
           if (clients[i].active) {
-            XMoveResizeWindow(dpy, clients[i].win, 0, lemonbar_height, screen_width,
+            XMoveResizeWindow(dpy, clients[i].win, 0, get_client_y(), screen_width,
                               screen_height - lemonbar_height);
           }
         }
