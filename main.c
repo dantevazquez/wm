@@ -122,6 +122,8 @@ void reload_config() {
     config.max_windows = 128;
   }
 
+  kill_lemonbar();
+
   if (config.bar_enabled && is_command_in_path("lemonbar")) {
     runtime_bar_enabled = 1;
     lemonbar_height = get_scaled_bar_height(dpy);
@@ -129,7 +131,6 @@ void reload_config() {
   } else {
     runtime_bar_enabled = 0;
     lemonbar_height = 0;
-    kill_lemonbar();
   }
 
   XUngrabKey(dpy, AnyKey, AnyModifier, root);
