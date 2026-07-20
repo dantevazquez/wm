@@ -62,6 +62,7 @@ typedef struct {
     char bar_color_time_fg[32];
     char bar_color_volume_fg[32];
     char bar_color_battery_fg[32];
+    char bar_color_recording_fg[32];
 
     // Bar Modules Setup
     int bar_show_windows;
@@ -89,6 +90,11 @@ typedef struct {
     char bar_volume_icon_med[32];
     char bar_volume_icon_low[32];
     char bar_volume_icon_mute[32];
+
+    int bar_show_recording;
+    char bar_recording_position;
+    char bar_recording_cmd[256];
+    char bar_recording_icon[32];
 
     // App Icons
     char default_icon_str[32];

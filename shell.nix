@@ -10,5 +10,12 @@ pkgs.mkShell {
 
   buildInputs = with pkgs; [
     libx11
+    libxcb
+    libxft
+    libxinerama
+    libxrandr
+    libxext
+    freetype
+    fontconfig
   ];
 }

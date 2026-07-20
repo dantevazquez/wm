@@ -270,6 +270,26 @@ static int render_battery(char *buf, int size) {
   return snprintf(buf, size, " %s %d%% ", icon, percent);
 }
 
+static int is_recording_active(void) {
+  if (config.bar_recording_cmd[0] == '\0')
+    return 0;
+  FILE *f = popen(config.bar_recording_cmd, "r");
+  if (!f)
+    return 0;
+  int status = pclose(f);
+  return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+}
+
+static int render_recording(char *buf, int size) {
+  if (!is_recording_active())
+    return 0;
+
+  if (strcmp(config.bar_color_recording_fg, "-") != 0 && config.bar_color_recording_fg[0] != '\0') {
+    return snprintf(buf, size, " %%{F%s}%s%%{F-} ", config.bar_color_recording_fg, config.bar_recording_icon);
+  }
+  return snprintf(buf, size, " %s ", config.bar_recording_icon);
+}
+
 static void compose_bar(Client *clients, int max_windows, int current_client,
                         Display *dpy, int refresh_windows) {
   pthread_mutex_lock(&bar_mutex);
@@ -326,6 +346,17 @@ static void compose_bar(Client *clients, int max_windows, int current_client,
       c_off += render_battery(center + c_off, (int)sizeof(center) - c_off);
     } else if (config.bar_battery_position == 'r') {
       r_off += render_battery(right + r_off, (int)sizeof(right) - r_off);
+    }
+  }
+
+  // Recording module
+  if (config.bar_show_recording) {
+    if (config.bar_recording_position == 'l') {
+      l_off += render_recording(left + l_off, (int)sizeof(left) - l_off);
+    } else if (config.bar_recording_position == 'c') {
+      c_off += render_recording(center + c_off, (int)sizeof(center) - c_off);
+    } else if (config.bar_recording_position == 'r') {
+      r_off += render_recording(right + r_off, (int)sizeof(right) - r_off);
     }
   }
 

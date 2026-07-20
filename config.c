@@ -129,6 +129,7 @@ static void config_set_defaults(void) {
     strcpy(config.bar_color_time_fg, "-");
     strcpy(config.bar_color_volume_fg, "-");
     strcpy(config.bar_color_battery_fg, "-");
+    strcpy(config.bar_color_recording_fg, "#ff5555");
 
     config.bar_show_windows = 1;
     config.bar_windows_position = 'l';
@@ -155,6 +156,11 @@ static void config_set_defaults(void) {
     strcpy(config.bar_volume_icon_med, "󰖀");
     strcpy(config.bar_volume_icon_low, "󰕿");
     strcpy(config.bar_volume_icon_mute, "󰝟");
+
+    config.bar_show_recording = 1;
+    config.bar_recording_position = 'r';
+    strcpy(config.bar_recording_cmd, "pgrep -x ffmpeg >/dev/null || pgrep -x obs >/dev/null || pgrep -x simplescreenrecorder >/dev/null || pgrep -x gpu-screen-recorder >/dev/null || pgrep -x wf-recorder >/dev/null");
+    strcpy(config.bar_recording_icon, "");
 
     strcpy(config.default_icon_str, "");
     config.app_icon_count = 0;
@@ -266,6 +272,8 @@ static void load_config_file(const char *path) {
             strncpy(config.bar_color_volume_fg, val, sizeof(config.bar_color_volume_fg) - 1);
         } else if (strcmp(key, "bar_color_battery_fg") == 0) {
             strncpy(config.bar_color_battery_fg, val, sizeof(config.bar_color_battery_fg) - 1);
+        } else if (strcmp(key, "bar_color_recording_fg") == 0) {
+            strncpy(config.bar_color_recording_fg, val, sizeof(config.bar_color_recording_fg) - 1);
         }
         // Bar Modules
         else if (strcmp(key, "bar_show_windows") == 0) {
@@ -312,6 +320,14 @@ static void load_config_file(const char *path) {
             strncpy(config.bar_volume_icon_low, val, sizeof(config.bar_volume_icon_low) - 1);
         } else if (strcmp(key, "bar_volume_icon_mute") == 0) {
             strncpy(config.bar_volume_icon_mute, val, sizeof(config.bar_volume_icon_mute) - 1);
+        } else if (strcmp(key, "bar_show_recording") == 0) {
+            config.bar_show_recording = atoi(val);
+        } else if (strcmp(key, "bar_recording_position") == 0) {
+            config.bar_recording_position = val[0];
+        } else if (strcmp(key, "bar_recording_cmd") == 0) {
+            strncpy(config.bar_recording_cmd, val, sizeof(config.bar_recording_cmd) - 1);
+        } else if (strcmp(key, "bar_recording_icon") == 0) {
+            strncpy(config.bar_recording_icon, val, sizeof(config.bar_recording_icon) - 1);
         }
         // App icon mappings
         else if (strcmp(key, "default_icon") == 0) {

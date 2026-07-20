@@ -151,7 +151,7 @@ void reload_config() {
     }
   }
 
-  bar_trigger_update();
+  update_bar(clients, config.max_windows, current_client, dpy);
   printf("monowm: configuration reloaded\n");
 }
 
