@@ -116,3 +116,5 @@ You can interact with a running `monowm` instance or query its settings using th
 * `monowm --get-bar-height`: Prints the scaled height of the status bar.
 * `monowm --get-bar-font`: Prints the scaled font configuration used by the status bar.
 
+## Coming soon...
+* Multi monitor support
