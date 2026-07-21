@@ -80,12 +80,28 @@ void update_active_window() {
 }
 
 double get_dpi(Display *d) {
-  int screen = DefaultScreen(d);
-  double height_mm = DisplayHeightMM(d, screen);
-  if (height_mm > 0) {
-    return (DisplayHeight(d, screen) * 25.4) / height_mm;
+  Display *temp_dpy = XOpenDisplay(NULL);
+  Display *target_d = temp_dpy ? temp_dpy : d;
+
+  char *dpi_str = XGetDefault(target_d, "Xft", "dpi");
+  double dpi = 96.0;
+  if (dpi_str) {
+    double parsed = atof(dpi_str);
+    if (parsed > 0) {
+      dpi = parsed;
+    }
+  } else {
+    int screen = DefaultScreen(target_d);
+    double height_mm = DisplayHeightMM(target_d, screen);
+    if (height_mm > 0) {
+      dpi = (DisplayHeight(target_d, screen) * 25.4) / height_mm;
+    }
   }
-  return 96.0;
+
+  if (temp_dpy) {
+    XCloseDisplay(temp_dpy);
+  }
+  return dpi;
 }
 
 int get_scaled_bar_height(Display *d) {
