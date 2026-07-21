@@ -46,7 +46,6 @@ typedef struct {
 
     // Bar Settings
     int bar_enabled;
-    int bar_height;
     char bar_font_name[128];
     int bar_font_size;
     int bar_update_interval;

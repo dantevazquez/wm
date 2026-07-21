@@ -90,7 +90,8 @@ double get_dpi(Display *d) {
 
 int get_scaled_bar_height(Display *d) {
   double dpi = get_dpi(d);
-  int height = (int)(config.bar_height * (dpi / 96.0) + 0.5);
+  int font_size = (int)(config.bar_font_size * (dpi / 96.0) + 0.5);
+  int height = font_size * 2;
   if (height < 10) height = 10;
   return height;
 }
@@ -465,7 +466,7 @@ int main(int argc, char *argv[]) {
   if (argc > 1 && strcmp(argv[1], "--get-bar-height") == 0) {
     Display *d = XOpenDisplay(NULL);
     if (!d) {
-      printf("%d\n", config.bar_height);
+      printf("%d\n", config.bar_font_size * 2);
       return 0;
     }
     printf("%d\n", get_scaled_bar_height(d));

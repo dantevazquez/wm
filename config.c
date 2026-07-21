@@ -114,7 +114,6 @@ static void config_set_defaults(void) {
 
     // bar.conf defaults
     config.bar_enabled = 1;
-    config.bar_height = 24;
     strcpy(config.bar_font_name, "JetBrainsMono Nerd Font");
     config.bar_font_size = 6;
     config.bar_update_interval = 5;
@@ -238,8 +237,6 @@ static void load_config_file(const char *path) {
         // Bar Settings
         else if (strcmp(key, "bar_enabled") == 0) {
             config.bar_enabled = atoi(val);
-        } else if (strcmp(key, "bar_height") == 0) {
-            config.bar_height = atoi(val);
         } else if (strcmp(key, "bar_font_name") == 0) {
             strncpy(config.bar_font_name, val, sizeof(config.bar_font_name) - 1);
         } else if (strcmp(key, "bar_font_size") == 0) {
